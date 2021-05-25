@@ -1,0 +1,33 @@
+name: Build master
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      LANG: "en_US.UTF-8"
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+
+    steps:
+    - name: Install necessary packages
+      run: sudo apt install autopoint gettext
+    - uses: actions/checkout@v1
+    - name: Compile
+      env:
+        CC: ${{ matrix.compiler }}
+      run: |
+        ./utils/autogen.sh
+        ./configure 
+        make 
+    - name: Run tests
+      env:
+        CC: ${{ matrix.compiler }}
+      run: make check
+    - uses: actions/upload-artifact@v2
+      if: failure()
+      with:
+        name: test-logs
+        path: tests/*.log
